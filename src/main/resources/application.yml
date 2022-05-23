@@ -1,0 +1,25 @@
+server:
+  port: 29550
+
+spring:
+  profiles:
+    active: dev
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: KairosdbServer
+  security:
+    user:
+      name: admin
+      password: admin123
+      roles: admin
+  jmx:
+    enabled: true
+
+management:
+  endpoints:
+    enabled-by-default: true
+    web:
+      exposure:
+        include: "*"
+    migrate-legacy-ids: true

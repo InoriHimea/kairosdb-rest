@@ -1,0 +1,20 @@
+spring:
+  data:
+    cassandra:
+      contact-points: 192.168.31.29
+      port: 9042
+      keyspace-name: kairosdb
+      username: cassandra
+      password: cassandra
+      compression: lz4
+      local-datacenter: kairosdb
+      session-name: KairosdbQuery
+
+api:
+  swagger:
+    enable: true
+    type: oas_30
+
+kairos:
+  domain: 192.168.31.29
+  port: 8880
