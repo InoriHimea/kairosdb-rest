@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.kairosdb.client.HttpClient;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -34,6 +35,9 @@ public class KairosHttpClientConfig {
 
     @Bean("kairosClient")
     public HttpClient httpClient() throws MalformedURLException {
-        return new HttpClient(HttpClientBuilder.create().build(), this.schema + "://" + this.domain + ":" + this.port);
+        return new HttpClient(HttpClientBuilder.create()
+                .useSystemProperties()
+                .setConnectionManager(new PoolingHttpClientConnectionManager())
+                .build(), this.schema + "://" + this.domain + ":" + this.port);
     }
 }

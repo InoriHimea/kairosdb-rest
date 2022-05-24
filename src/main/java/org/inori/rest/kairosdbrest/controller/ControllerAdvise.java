@@ -26,6 +26,7 @@ public class ControllerAdvise {
     @ExceptionHandler(Throwable.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Mono<String> throwableHandler(Throwable t) {
+        log.error("请求异常: {}", t.getMessage(), t);
         return Mono.just(JsonUtils.toJson(t));
     }
 }
