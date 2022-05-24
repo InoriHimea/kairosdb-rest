@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,7 +59,28 @@ public class MetricsServiceImpl implements MetricsService {
             doubleDataPointsWithTime.forEach(doubleMap -> doubleMap.forEach((key, value) -> metric.addDataPoint(key, Optional.ofNullable(value))));
         }
 
-        kairosClient.pushMetrics(metricBuilder);
-        return Boolean.TRUE;
+        try {
+            kairosClient.pushMetrics(metricBuilder);
+            return Boolean.TRUE;
+        } catch (Exception e) {
+            log.error("推送数据异常: {}", e.getMessage(), e);
+            return Boolean.FALSE;
+        }
+    }
+
+    @Override
+    public Map<String, Boolean> pushMetrics(List<MetricData> metricDataList) {
+        log.info("批量计入数据: {}", metricDataList.size());
+        MetricBuilder metricBuilder = MetricBuilder.getInstance();
+        metricBuilder.setCompression(true);
+
+        Assert.isTrue(CollectionUtils.isNotEmpty(metricDataList), "必须含有有效数据内容");
+
+        Map<String, Boolean> batchResult = new LinkedHashMap<>();
+        for (MetricData metricData : metricDataList) {
+            batchResult.putIfAbsent(metricData.getMetricName(), this.pushMetric(metricData));
+        }
+
+        return batchResult;
     }
 }

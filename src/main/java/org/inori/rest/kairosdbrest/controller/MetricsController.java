@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author InoriHimea
  * @version 1.0
@@ -26,9 +30,15 @@ public class MetricsController {
     @Autowired
     private MetricsService metricsService;
 
-    @PostMapping("/add")
+    @PostMapping("/push")
     public Mono<Boolean> pushMetric(@RequestBody MetricData metricData) {
         return Mono.just(metricsService.pushMetric(metricData))
                 .onErrorReturn(Boolean.FALSE);
+    }
+
+    @PostMapping("/batch/push")
+    public Mono<Map<String, Boolean>> pushMetrics(@RequestBody List<MetricData> metricDataList) {
+        return Mono.just(metricsService.pushMetrics(metricDataList))
+                .onErrorReturn(Collections.emptyMap());
     }
 }
