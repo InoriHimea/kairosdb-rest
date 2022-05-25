@@ -9,6 +9,20 @@ spring:
       compression: lz4
       local-datacenter: kairosdb
       session-name: KairosdbQuery
+  kafka:
+    bootstrap-servers: 192.168.31.29:9097
+    listener:
+      type: batch
+      concurrency: 10
+      log-container-config: true
+      client-id: kairos-app-
+    consumer:
+      group-id: dn
+      enable-auto-commit: true
+      client-id: kairos-app
+      max-poll-records: 10
+      auto-offset-reset: latest
+
 
 api:
   swagger:

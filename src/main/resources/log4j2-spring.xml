@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration status="ERROR" monitorInterval="30">
+
+    <Properties>
+        <Property name="logFilePath">log</Property>
+        <Property name="logFileName">Kairos-Rest</Property>
+        <property name="logPattern" value="%style{%d{yyyy-MM-dd HH:mm:ss.SSS}}{magenta} %highlight{%-5level} %style{[%thread]}{red} %style{%logger{36}}{cyan}%style{.%M(%L)}{yellow} - %style{%msg}{green} %n"/>
+    </Properties>
+
+    <appenders>
+        <!-- 控制台输出日志 -->
+        <console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${logPattern}" disableAnsi="false" noConsoleNoAnsi="false" />
+        </console>
+
+        <!-- 通用日志数据 -->
+        <RollingFile name="RollingFile" fileName="${logFilePath}/${logFileName}.log"
+                     filePattern="logs/$${date:yyyy-MM}/${logFileName}-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${logPattern}" disableAnsi="true" noConsoleNoAnsi="true" />
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="50 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+    </appenders>
+
+    <loggers>
+        <!-- 根日志数据 -->
+        <root level="DEBUG" includeLocation="true">
+            <appender-ref ref="Console"/>
+<!--            <appender-ref ref="RollingFile"/>-->
+        </root>
+
+        <!-- 个别日志级别输出控制 -->
+        <logger name="org.springframework" level="ERROR" includeLocation="true" />
+        <logger name="_org.springframework" level="ERROR" includeLocation="true" />
+        <logger name="springfox" level="ERROR" includeLocation="true" />
+        <logger name="org.eclipse.jetty" level="ERROR" includeLocation="true" />
+        <logger name="org.mybatis" level="ERROR" includeLocation="true" />
+        <logger name="org.apache.kafka" level="INFO" includeLocation="true" />
+    </loggers>
+</configuration>
