@@ -15,7 +15,6 @@ import org.springframework.util.Assert;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author InoriHimea
@@ -51,12 +50,12 @@ public class MetricsServiceImpl implements MetricsService {
 
         List<Map<Long, Long>> longDataPointsWithTime = metricData.getLongDataPointsWithTime();
         if (CollectionUtils.isNotEmpty(longDataPointsWithTime)) {
-            longDataPointsWithTime.forEach(longMap -> longMap.forEach((key, value) -> metric.addDataPoint(key, Optional.ofNullable(value))));
+            longDataPointsWithTime.forEach(longMap -> longMap.forEach((key, value) -> metric.addDataPoint(key.longValue(), value.longValue())));
         }
 
         List<Map<Long, Double>> doubleDataPointsWithTime = metricData.getDoubleDataPointsWithTime();
         if (CollectionUtils.isNotEmpty(doubleDataPointsWithTime)) {
-            doubleDataPointsWithTime.forEach(doubleMap -> doubleMap.forEach((key, value) -> metric.addDataPoint(key, Optional.ofNullable(value))));
+            doubleDataPointsWithTime.forEach(doubleMap -> doubleMap.forEach((key, value) -> metric.addDataPoint(key.longValue(), value.longValue())));
         }
 
         try {
