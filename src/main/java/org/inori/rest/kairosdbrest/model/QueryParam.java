@@ -2,8 +2,7 @@ package org.inori.rest.kairosdbrest.model;
 
 import lombok.*;
 import lombok.experimental.Accessors;
-import org.kairosdb.client.builder.Aggregator;
-import org.kairosdb.client.builder.Grouper;
+import org.kairosdb.client.builder.QueryMetric;
 
 import java.util.List;
 import java.util.Map;
@@ -26,13 +25,21 @@ public class QueryParam {
 
     private String endTime;
 
+    private String startDuring;
+
+    private String endDuring;
+
     private String metricName;
+
+    private Integer limit;
+
+    private QueryMetric.Order order;
 
     private Map<String, String> tags;
 
     private Map<String, List<String>> multiValueTags;
 
-    private List<Aggregator> Aggregators;
+    private List<Aggregators> Aggregators;
 
-    private List<Grouper> groupers;
+    private List<Groupers> groupers;
 }

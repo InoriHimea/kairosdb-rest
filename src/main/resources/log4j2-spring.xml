@@ -24,6 +24,17 @@
             </Policies>
             <DefaultRolloverStrategy max="10"/>
         </RollingFile>
+
+        <!-- kafka数据接收日志 -->
+        <RollingRandomAccessFile name="kafka-log" fileName="${logFilePath}/kafka-log.log" immediateFlush="false" append="false"
+                     filePattern="logs/$${date:yyyy-MM}/kafka-log-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${logPattern}" disableAnsi="true" noConsoleNoAnsi="true" />
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="20 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingRandomAccessFile>
     </appenders>
 
     <loggers>
@@ -40,5 +51,9 @@
         <logger name="org.eclipse.jetty" level="ERROR" includeLocation="true" />
         <logger name="org.mybatis" level="ERROR" includeLocation="true" />
         <logger name="org.apache.kafka" level="INFO" includeLocation="true" />
+
+        <asyncLogger name="org.inori.rest.kairosdbrest.kafka" level="DEBUG" includeLocation="true" additivity="true">
+            <appender-ref ref="kafka-log" />
+        </asyncLogger>
     </loggers>
 </configuration>
