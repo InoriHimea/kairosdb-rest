@@ -1,28 +1,25 @@
 package org.inori.rest.kairosdbrest.service.impl;
 
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.inori.rest.kairosdbrest.enums.AggregatorEnums;
-import org.inori.rest.kairosdbrest.enums.GrouperEnums;
-import org.inori.rest.kairosdbrest.model.*;
+import org.inori.rest.kairosdbrest.model.QueryParam;
+import org.inori.rest.kairosdbrest.service.BaseKairosService;
 import org.inori.rest.kairosdbrest.service.DatapointService;
-import org.inori.rest.kairosdbrest.utils.TimeUtil;
 import org.kairosdb.client.HttpClient;
 import org.kairosdb.client.builder.QueryBuilder;
-import org.kairosdb.client.builder.QueryMetric;
-import org.kairosdb.client.builder.TimeUnit;
+import org.kairosdb.client.builder.QueryTagBuilder;
+import org.kairosdb.client.builder.QueryTagMetric;
 import org.kairosdb.client.response.QueryResponse;
 import org.kairosdb.client.response.QueryResult;
+import org.kairosdb.client.response.QueryTagResponse;
+import org.kairosdb.client.response.TagQueryResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author InoriHimea
@@ -32,96 +29,14 @@ import java.util.regex.Pattern;
  */
 @Service
 @Log4j2
-public class DatapointServiceImpl implements DatapointService {
-
-    private static final String KAIROS_START_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
-    private static final String KAIROS_DATE_TIME_CHECK_PATTERN = "(\\d{4})-(\\d{2})-(\\d{2}) (\\d{2}):(\\d{2}):(\\d{2})";
+public class DatapointServiceImpl extends BaseKairosService implements DatapointService {
 
     @Autowired
     private HttpClient kairosClient;
 
     @Override
     public List<QueryResult> query(QueryParam queryParam) {
-        QueryBuilder queryBuilder = QueryBuilder.getInstance();
-
-        String metricName = queryParam.getMetricName();
-        String startTime = queryParam.getStartTime();
-        String endTime = queryParam.getEndTime();
-        String startDuring = queryParam.getStartDuring();
-        String endDuring = queryParam.getEndDuring();
-
-        Assert.isTrue(StringUtils.isNotBlank(metricName), "指标名称不能为空");
-        Assert.isTrue(StringUtils.isNotBlank(startTime) || StringUtils.isNotBlank(startDuring), "开始时间不能为空");
-
-        LocalDateTime startDateTime = null;
-        if (StringUtils.isNotBlank(startTime)) {
-            Assert.isTrue(Pattern.matches(KAIROS_DATE_TIME_CHECK_PATTERN, startTime), "startTime时间格式必须是" + KAIROS_START_TIME_PATTERN);
-            startDateTime = LocalDateTime.parse(startTime, DateTimeFormatter.ofPattern(KAIROS_START_TIME_PATTERN));
-        }
-
-        Map<String, Object> startDuringMap = new LinkedHashMap<>();
-        if (StringUtils.isNotBlank(startDuring)) {
-            Assert.isTrue(Pattern.matches("(\\d)* (\\w)*", startDuring), "startDuring时间格式为: 时间+空格+单位，如(1 Hours)");
-            this.parseDuring(startDuring, startDuringMap);
-        }
-
-        LocalDateTime endDateTime = null;
-        if (StringUtils.isNotBlank(endTime)) {
-            Assert.isTrue(Pattern.matches(KAIROS_DATE_TIME_CHECK_PATTERN, endTime), "endTime时间格式必须是" + KAIROS_START_TIME_PATTERN);
-            endDateTime = LocalDateTime.parse(endTime, DateTimeFormatter.ofPattern(KAIROS_START_TIME_PATTERN));
-        }
-
-        Map<String, Object> endDuringMap = new LinkedHashMap<>();
-        if (StringUtils.isNotBlank(endDuring)) {
-            Assert.isTrue(Pattern.matches("(\\d)* (\\w)*", endDuring), "endDuring: 时间+空格+单位，如(1 Hours)");
-            this.parseDuring(endDuring, endDuringMap);
-        }
-
-        /*
-            fixme: gson问题导致无法序列化
-         */
-        //queryBuilder.setTimeZone(TimeZone.getDefault());
-
-        if (startDateTime != null)  {
-            queryBuilder.setStart(TimeUtil.toDate(startDateTime))
-                    .setEnd(endDateTime == null ? null : TimeUtil.toDate(endDateTime));
-        }
-        if (startDuring != null) {
-            queryBuilder.setStart((Integer) startDuringMap.get("value"), (TimeUnit) startDuringMap.get("unit"))
-                    .setEnd((Integer) endDuringMap.get("value"), (TimeUnit) endDuringMap.get("unit"));
-        }
-
-        QueryMetric queryMetric = queryBuilder.addMetric(metricName);
-
-        QueryMetric.Order order = queryParam.getOrder();
-        if (order != null) {
-            queryMetric.setOrder(order);
-        }
-
-        Integer limit = queryParam.getLimit();
-        if (limit != null) {
-            queryMetric.setLimit(limit);
-        }
-
-        Map<String, String> tags = queryParam.getTags();
-        if (MapUtils.isNotEmpty(tags)) {
-            queryMetric.addTags(tags);
-        }
-
-        Map<String, List<String>> multiValueTags = queryParam.getMultiValueTags();
-        if (MapUtils.isNotEmpty(multiValueTags)) {
-            queryMetric.addMultiValuedTags(multiValueTags);
-        }
-
-        List<Aggregators> aggregators = queryParam.getAggregators();
-        if (CollectionUtils.isNotEmpty(aggregators)) {
-            aggregators.forEach(aggregator -> this.parseAggregator(queryMetric, aggregator));
-        }
-
-        List<Groupers> groupers = queryParam.getGroupers();
-        if (CollectionUtils.isNotEmpty(groupers)) {
-            groupers.forEach(grouper -> this.parseGroup(queryMetric, grouper));
-        }
+        QueryBuilder queryBuilder = queryParam2QueryBuilder(queryParam);
 
         try {
             QueryResponse queryResponse = kairosClient.query(queryBuilder);
@@ -132,78 +47,63 @@ public class DatapointServiceImpl implements DatapointService {
         }
     }
 
-    private void parseDuring(String duringStr, Map<String, Object> duringMap) {
-        String[] duringArr = duringStr.split(" ");
-        int value = Integer.parseInt(duringArr[0]);
-        String unit = duringArr[1];
+    @Override
+    public List<TagQueryResult> queryTags(QueryParam queryParam) {
+        QueryTagBuilder tagBuilder = QueryTagBuilder.getInstance();
 
-        duringMap.put("value", value);
-        duringMap.put("unit", TimeUnit.valueOf(unit.toUpperCase()));
-    }
+        checkRequiredParam(queryParam, tagBuilder);
 
-    private void parseAggregator(QueryMetric queryMetric, Aggregators aggregator) {
-        AggregatorEnums aggregatorName = aggregator.getAggregatorName();
-        log.info("给定的aggregatorName -> {}", aggregatorName);
-        AggregatorWrapper aggregatorContent = aggregator.getGrouperContent();
-        Assert.notNull(aggregatorContent, "tagGrouperContent需要有效内容");
+        QueryTagMetric queryTagMetric = tagBuilder.addMetric(queryParam.getMetricName());
 
-        switch (aggregatorName) {
-            case AVG:
-            case COUNT:
-            case FIRST:
-            case GAPS:
-            case LAST:
-            case MAX:
-            case MIN:
-            case SUM:
-            case LEAST_SQUARES:
-                queryMetric.addAggregator(aggregatorContent.getSamplingAggregator(aggregatorName.getJsonValue()));
-                break;
-            case SAMPLER:
-            case SAVE_AS:
-            case TRIM:
-            case SCALE:
-            case FILTER:
-            case DEV:
-            case DIV:
-            case DIFF:
-                throw new UnsupportedOperationException("暂未做支持配置");
-            case RATE:
-                queryMetric.addAggregator(aggregatorContent.getRateAggregator());
-                break;
-            case PERCENTILE:
-                queryMetric.addAggregator(aggregatorContent.getPercentileAggregator());
-                break;
-            case CUSTOM:
-            default:
-                queryMetric.addAggregator(aggregatorContent.getCustomAggregator());
-                break;
+        Map<String, String> tags = queryParam.getTags();
+        if (MapUtils.isNotEmpty(tags)) {
+            queryTagMetric.addTags(tags);
+        }
+
+        try {
+            QueryTagResponse queryResponse = kairosClient.queryTags(tagBuilder);
+            return queryResponse.getQueries();
+        } catch (Exception e) {
+            log.error("查询异常: {}", e.getMessage(), e);
+            return Collections.emptyList();
         }
     }
 
-    private void parseGroup(QueryMetric queryMetric, Groupers groupers) {
-        GrouperEnums groupName = groupers.getGrouperName();
-        log.info("给定的groupName -> {}", groupName);
-        GrouperWrapper grouperContent = groupers.getGrouperContent();
-        Assert.notNull(grouperContent, "tagGrouperContent需要有效内容");
+    @Override
+    public List<String> listMetricsName() {
+        return kairosClient.getMetricNames();
+    }
 
-        switch (groupName) {
-            case TAG:
-                queryMetric.addGrouper(grouperContent.getTagGrouper());
-                break;
-            case BIN:
-                queryMetric.addGrouper(grouperContent.getBinGrouper());
-                break;
-            case TIME:
-                queryMetric.addGrouper(grouperContent.getTimeGrouper());
-                break;
-            case VALUE:
-                queryMetric.addGrouper(grouperContent.getValueGrouper());
-                break;
-            case CUSTOM:
-            default:
-                queryMetric.addGrouper(grouperContent.getCustomGrouper());
-                break;
+    @Override
+    public Map<String, Boolean> checkMetricExists(List<String> metricsNameList) {
+        List<String> metricNames = kairosClient.getMetricNames();
+        return metricsNameList.stream()
+                .collect(Collectors.toMap(metric -> metric, metricNames::contains));
+    }
+
+    @Override
+    public boolean deleteMetric(String metricName) {
+        log.info("删除指标: {}", metricName);
+
+        try {
+            kairosClient.deleteMetric(metricName);
+            return Boolean.TRUE;
+        } catch (Exception e) {
+            log.error("删除指标异常: {}", e.getMessage() ,e);
+            return Boolean.FALSE;
+        }
+    }
+
+    @Override
+    public boolean deleteMetricPoints(QueryParam queryParam) {
+        QueryBuilder queryBuilder = queryParam2QueryBuilder(queryParam);
+
+        try {
+            kairosClient.delete(queryBuilder);
+            return Boolean.TRUE;
+        } catch (Exception e) {
+            log.error("指标点删除异常: {}", e.getMessage(), e);
+            return Boolean.FALSE;
         }
     }
 }
