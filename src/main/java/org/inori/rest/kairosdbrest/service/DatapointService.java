@@ -1,5 +1,10 @@
 package org.inori.rest.kairosdbrest.service;
 
+import org.inori.rest.kairosdbrest.model.QueryParam;
+import org.kairosdb.client.response.QueryResult;
+
+import java.util.List;
+
 /**
  * @author InoriHimea
  * @version 1.0
@@ -8,5 +13,5 @@ package org.inori.rest.kairosdbrest.service;
  */
 public interface DatapointService {
 
-    void query();
+    List<QueryResult> query(QueryParam queryParam);
 }

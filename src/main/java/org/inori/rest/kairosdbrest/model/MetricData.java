@@ -20,8 +20,14 @@ import java.util.Map;
 @ToString
 public class MetricData {
 
+    /**
+     * 指标名
+     */
     private String metricName;
 
+    /**
+     * 指标的标签
+     */
     private Map<String, String> tags;
 
     private List<Long> longDataPoints;

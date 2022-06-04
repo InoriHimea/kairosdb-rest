@@ -22,6 +22,24 @@ spring:
       client-id: kairos-app
       max-poll-records: 10
       auto-offset-reset: latest
+  datasource:
+    url: jdbc:p6spy:postgresql://192.168.31.29:44322/ry-vue
+    username: inori
+    password: inori0114
+    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+    #type: org.postgresql.jdbc2.optional.PoolingDataSource
+    name: DnAdminDatabase
+    generate-unique-name: false
+    hikari:
+      register-mbeans: true
+      auto-commit: true
+      connection-test-query: select version();
+      idle-timeout: 20000
+      minimum-idle: 5
+      max-lifetime: 60000
+      maximum-pool-size: 10
+      schema: public
+
 
 
 api:

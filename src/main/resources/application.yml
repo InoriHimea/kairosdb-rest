@@ -15,6 +15,23 @@ spring:
       roles: admin
   jmx:
     enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: update
+      use-new-id-generator-mappings: true
+      naming:
+        implicit-strategy: org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy
+        physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
+    show-sql: true
+    database: postgresql
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQL10Dialect
+  data:
+    jpa:
+      repositories:
+        bootstrap-mode: default
 
 management:
   endpoints:

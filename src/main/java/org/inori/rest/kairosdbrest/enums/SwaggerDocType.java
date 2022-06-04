@@ -1,5 +1,6 @@
 package org.inori.rest.kairosdbrest.enums;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
@@ -11,7 +12,7 @@ import lombok.ToString;
  * @since 1.8
  */
 @Getter
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 @ToString
 public enum SwaggerDocType {
 
